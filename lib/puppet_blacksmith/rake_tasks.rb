@@ -5,9 +5,10 @@ require 'puppet_blacksmith'
 module Blacksmith
   class RakeTask < ::Rake::TaskLib
 
-    attr_accessor :tag_pattern, :build
+    attr_accessor :tag_pattern, :build, :git_root
 
     def initialize(*args, &task_block)
+      @git_root = '.'
       @build = true
       @task_name = args.shift || "blacksmith"
       @desc = args.shift || "Puppet Forge utilities"
@@ -57,7 +58,7 @@ module Blacksmith
         desc "Git tag with the current module version"
         task :tag do
           m = Blacksmith::Modulefile.new
-          git = Blacksmith::Git.new
+          git = Blacksmith::Git.new(@git_root)
           git.tag_pattern = @tag_pattern
           git.tag!(m.version)
         end
@@ -65,7 +66,7 @@ module Blacksmith
         desc "Bump version and git commit"
         task :bump_commit => :bump do
           m = Blacksmith::Modulefile.new
-          Blacksmith::Git.new.commit_modulefile!(m.version)
+          Blacksmith::Git.new(@git_root).commit_modulefile!(m.version)
         end
 
         desc "Push module to the Puppet Forge"
@@ -86,7 +87,7 @@ module Blacksmith
         release_dependencies = @build ? [:clean, :build, :tag, :push, :bump_commit] : [:clean, :tag, :bump_commit]
         task :release => release_dependencies do
           puts "Pushing to remote git repo"
-          Blacksmith::Git.new.push!
+          Blacksmith::Git.new(@git_root).push!
         end
 
         desc "Set specific module dependency version"

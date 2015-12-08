@@ -1,4 +1,6 @@
 require 'open3'
+require 'pp'
+require 'pathname'
 
 module Blacksmith
   class Git
@@ -21,9 +23,14 @@ module Blacksmith
     end
 
     def commit_modulefile!(version)
-      files = Blacksmith::Modulefile::FILES.select {|f| File.exists?(File.join(@path,f))}
+      files = Blacksmith::Modulefile::FILES.select {|f| File.exists?(File.join('.',f))}
       s = exec_git "add #{files.join(" ")}"
-      s += exec_git "commit -m '[blacksmith] Bump version to #{version}'"
+      if @path == '.'
+        s += exec_git "commit -m '[blacksmith] Bump module version to #{version}'"
+      else
+        modulename = Pathname.new(File.absolute_path('.')).relative_path_from(Pathname.new(File.absolute_path(@path))).to_s
+        s += exec_git "commit -m '[blacksmith] Bump #{modulename} module version to #{version}'"
+      end
       s
     end
 
